@@ -77,15 +77,101 @@ contract RealEstate {
         event PropertyListed(productId,owner,price);
     }
 
-    function updateProperty() external (uint256){}
+    function updateProperty(address owner ,uint256 productId,string memory _property,storage memory _category,string memory _images,string memory _propertyAddress,string memory _description) external (uint256){
 
-    function buyProperty() external payble{}
+        Property storage property = properties[productId];
 
-    function getAllProperties() public view returns(Property[] memory){}
+        require(property.owner == owner,"You are not the owner");
 
-    function getPropeerty() external view returns(){}
+        property.propertyTitle = _propertyTitle;
+        property.category = _category;
+        property.images = _images;
+        property.propertyAddress = _propertyAddress;
+        property.description = _description;
 
-    function getUseProperties() external view returns(Property[] memory){}
+        return productId;
+    }
+
+    function updatePrice(address owner ,uint256 productId,uint256 price)external returns(string memory){
+        Property storage property = properties[productId];
+
+        require(property.owner == owner,"you are not the owner");
+
+        property.price = price;
+
+        return  "your product property price upadtes";
+    }
+
+    function buyProperty(uint256 id,address buyer) external payble{
+        uint256 amount = msg.value;
+
+        require(amount >= property[id].price,"Insufficiant funds" );
+
+        Property storage property = properties[id];
+
+        (bool sent ,) = payable (property.owner).call{value:amount}("");
+
+        if(sent){
+            property.owner = buyer;
+            emit PropertySold(id,property.owner,buyer,amount);
+        }
+    }
+
+    function getAllProperties() public view returns(Property[] memory){
+        uint256 itemCount = propertyIndex;
+        uint256 currentIndex = 0;
+
+        Property[] memory items = new Property[](itemCount);
+        for(uint256 i = 0; i<itemCount;i++){
+            uint256 currentId = i +1;
+
+            Property storage currentItem = properties[currentId];
+            items[currentIndex] = currentItem;
+            currentIndex += 1;
+        }
+
+        return items;
+    }
+
+    function getPropeerty(uint256 id) external view returns(uint256,address,uint256,string memory,string memory,string memory, string memory){
+        Property memory property = properties[id];
+
+        return(
+            property.id,
+            property.owner,
+            property.price,
+            property.propertyTitle,
+            property.category,
+            property.images,
+            property.description,
+            property.propertyAddress
+
+        );
+    }
+
+    function getUseProperties(address user) external view returns(Property[] memory){
+        uint256 totalItemCount = propertyIndex;
+        uint256 itemCount = 0;
+        uint256 currentIndex = 0;
+
+        for(uint256 i = 0;i< totalItemCount;i++){
+            if(properties[i + 1].owner == user ){
+                itemCount += 1;
+            }
+        }
+
+        Property[] memory item = new Property[](itemCount);
+        for(uint256 i = 0;i<totalItemCount;i++){
+            if(properties[i + 1].owner == user){
+                uint256 currentId =i + 1;
+                Property storage currentItem = properties[currentId];
+
+                items[currentIndex] = currentItem;
+
+                currentIndex += 1;
+            }
+        }
+    }
 
     // Reviews
 
